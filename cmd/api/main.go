@@ -4,19 +4,30 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/Devashish08/post-comments-service/internal/handler"
+	"github.com/Devashish08/post-comments-service/internal/store"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 )
 
 func main() {
+	db := store.NewInMemoryStore()
+	postHandler := handler.NewPostHandler(db)
 	r := chi.NewRouter()
 
 	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
 
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"status":"service is up running"}`))
+	})
+
+	r.Route("/posts", func(r chi.Router) {
+		r.Post("/", postHandler.CreatePost)         // POST /posts
+		r.Get("/", postHandler.GetAllPosts)         // GET /posts
+		r.Get("/{postId}", postHandler.GetPostByID) // GET /posts/{postId}
 	})
 
 	const port = "8080"
