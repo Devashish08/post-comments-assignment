@@ -13,6 +13,11 @@ type PostHandler struct {
 	Store store.Store
 }
 
+type PostResponse struct {
+	model.Post
+	Comments []*model.Comment `json:"comments"`
+}
+
 func NewPostHandler(s store.Store) *PostHandler {
 	return &PostHandler{
 		Store: s,
@@ -61,7 +66,21 @@ func (h *PostHandler) GetPostByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Fetch comments for this post
+	comments, err := h.Store.GetCommentsByPostID(postID)
+	if err != nil {
+		// This is an internal error, not a client error
+		http.Error(w, "Failed to retrieve comments for post", http.StatusInternalServerError)
+		return
+	}
+
+	// Create the combined response
+	response := PostResponse{
+		Post:     *post,
+		Comments: comments,
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(post)
+	json.NewEncoder(w).Encode(response)
 }

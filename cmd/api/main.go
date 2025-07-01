@@ -13,6 +13,8 @@ import (
 func main() {
 	db := store.NewInMemoryStore()
 	postHandler := handler.NewPostHandler(db)
+	commentHandler := handler.NewCommentHandler(db)
+
 	r := chi.NewRouter()
 
 	r.Use(middleware.Logger)
@@ -25,9 +27,13 @@ func main() {
 	})
 
 	r.Route("/posts", func(r chi.Router) {
-		r.Post("/", postHandler.CreatePost)         // POST /posts
-		r.Get("/", postHandler.GetAllPosts)         // GET /posts
-		r.Get("/{postId}", postHandler.GetPostByID) // GET /posts/{postId}
+		r.Post("/", postHandler.CreatePost) // POST /posts
+		r.Get("/", postHandler.GetAllPosts) // GET /posts
+		r.Route("/{postId}", func(r chi.Router) {
+			r.Get("/", postHandler.GetPostByID)
+			r.Post("/comments", commentHandler.CreateComment)
+			r.Get("/comments", commentHandler.GetCommentsForPost)
+		})
 	})
 
 	const port = "8080"
