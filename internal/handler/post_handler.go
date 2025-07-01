@@ -62,25 +62,20 @@ func (h *PostHandler) GetPostByID(w http.ResponseWriter, r *http.Request) {
 
 	post, err := h.Store.GetPost(postID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		RespondWithError(w, http.StatusNotFound, err.Error())
 		return
 	}
 
-	// Fetch comments for this post
 	comments, err := h.Store.GetCommentsByPostID(postID)
 	if err != nil {
-		// This is an internal error, not a client error
-		http.Error(w, "Failed to retrieve comments for post", http.StatusInternalServerError)
+		RespondWithError(w, http.StatusInternalServerError, "Failed to retrieve comments for post")
 		return
 	}
 
-	// Create the combined response
 	response := PostResponse{
 		Post:     *post,
 		Comments: comments,
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	RespondWithJSON(w, http.StatusOK, response)
 }
