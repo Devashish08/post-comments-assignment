@@ -11,11 +11,16 @@ import (
 	"github.com/yuin/goldmark"
 )
 
+// CommentHandler handles HTTP requests related to comment operations.
+// This handler provides endpoints for creating comments and retrieving comments for posts.
+// It includes markdown processing functionality to convert raw markdown to HTML.
 type CommentHandler struct {
 	Store    store.Store
 	Markdown goldmark.Markdown
 }
 
+// NewCommentHandler creates a new CommentHandler instance with the provided store.
+// Initializes the markdown processor with default settings for safe HTML generation.
 func NewCommentHandler(s store.Store) *CommentHandler {
 	md := goldmark.New(
 		goldmark.WithRendererOptions(),
@@ -24,6 +29,12 @@ func NewCommentHandler(s store.Store) *CommentHandler {
 	return &CommentHandler{Store: s, Markdown: md}
 }
 
+// CreateComment handles POST /posts/{postId}/comments requests to create a new comment.
+// Processes markdown content and stores both raw and HTML versions of the comment.
+//
+// Request: POST /posts/{postId}/comments
+// Body: {"content": "Comment content in **markdown**"}
+// Response: 201 Created with comment JSON, 400/404/500 on error
 func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 	postID := chi.URLParam(r, "postId")
 
@@ -67,6 +78,11 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(comment)
 }
 
+// GetCommentsForPost handles GET /posts/{postId}/comments requests.
+// Returns all comments associated with the specified post.
+//
+// Request: GET /posts/{postId}/comments
+// Response: 200 OK with comments array JSON, 404 if post not found, or 500 on error
 func (h *CommentHandler) GetCommentsForPost(w http.ResponseWriter, r *http.Request) {
 	postID := chi.URLParam(r, "postId")
 	if _, err := h.Store.GetPost(postID); err != nil {

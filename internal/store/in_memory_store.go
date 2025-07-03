@@ -9,12 +9,15 @@ import (
 	"github.com/google/uuid"
 )
 
+// InMemoryStore provides an in-memory implementation of the Store interface.
+// Thread-safe with RWMutex protection for concurrent access.
 type InMemoryStore struct {
 	mu       sync.RWMutex
 	posts    map[string]*model.Post
-	comments map[string][]*model.Comment
+	comments map[string][]*model.Comment // key: postID, value: comments
 }
 
+// NewInMemoryStore creates a new instance of the in-memory store.
 func NewInMemoryStore() *InMemoryStore {
 	return &InMemoryStore{
 		posts:    make(map[string]*model.Post),
@@ -22,6 +25,7 @@ func NewInMemoryStore() *InMemoryStore {
 	}
 }
 
+// CreatePost stores a new post with auto-generated ID and timestamp.
 func (s *InMemoryStore) CreatePost(post *model.Post) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -33,6 +37,7 @@ func (s *InMemoryStore) CreatePost(post *model.Post) error {
 	return nil
 }
 
+// GetPost retrieves a post by ID. Returns error if not found.
 func (s *InMemoryStore) GetPost(id string) (*model.Post, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -45,6 +50,7 @@ func (s *InMemoryStore) GetPost(id string) (*model.Post, error) {
 	return post, nil
 }
 
+// GetAllPosts returns all posts in the store.
 func (s *InMemoryStore) GetAllPosts() ([]*model.Post, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -57,9 +63,10 @@ func (s *InMemoryStore) GetAllPosts() ([]*model.Post, error) {
 	return allPosts, nil
 }
 
+// CreateComment stores a new comment with auto-generated ID and timestamp.
+// Validates that the associated post exists.
 func (s *InMemoryStore) CreateComment(comment *model.Comment) error {
 	s.mu.Lock()
-
 	defer s.mu.Unlock()
 
 	_, exists := s.posts[comment.PostID]
@@ -74,6 +81,7 @@ func (s *InMemoryStore) CreateComment(comment *model.Comment) error {
 	return nil
 }
 
+// GetCommentsByPostID retrieves all comments for a specific post.
 func (s *InMemoryStore) GetCommentsByPostID(postID string) ([]*model.Comment, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
